@@ -1364,16 +1364,104 @@ function acceptOffer(offer){
   addNews(`✍️ ${S.player.name} é anunciado(a) como novo reforço do ${offer.club} por ${fmtMoney(offer.value)}!`, 'transfer');
 }
 
+// tableDiv: divisão a que pertencia a tabela (1 ou 2), passada por finalizeSeason
+// antes de o jogador mudar de divisão
+function simulateOtherTeamsPromoRelegation(sorted, country, tableDiv){
+  const clubs = CLUBS[country];
+  if(!clubs || !clubs.d1 || !clubs.d2) return;
+
+  const myClubName = S.club.name;
+  const n = sorted.length;
+  const inTable = new Set(sorted.map(t=>t.name));
+
+  if(tableDiv === 1){
+    // Os 2 últimos da D1 caem — sem exceção, incluindo o jogador
+    const relegated = sorted.slice(n - 2);
+
+    relegated.forEach(t=>{
+      const idx = clubs.d1.findIndex(([name])=>name===t.name);
+      if(idx===-1) return;
+      const entry = clubs.d1.splice(idx,1)[0];
+      clubs.d2.push(entry);
+    });
+
+    // Os 2 mais fortes de D2 que não estavam na tabela sobem
+    const promoted = clubs.d2
+      .filter(([name])=>!inTable.has(name))
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0, 2);
+
+    promoted.forEach(entry=>{
+      const idx = clubs.d2.findIndex(([name])=>name===entry[0]);
+      if(idx===-1) return;
+      clubs.d2.splice(idx,1);
+      clubs.d1.push(entry);
+    });
+
+    if(relegated.length){
+      const names = relegated.map(t=>t.name).join(' e ');
+      addNews(`📉 ${names} ${relegated.length>1?'são rebaixados':'é rebaixado'} para a Divisão 2.`, 'info');
+    }
+    if(promoted.length){
+      const names = promoted.map(([name])=>name).join(' e ');
+      addNews(`📈 ${names} ${promoted.length>1?'sobem':'sobe'} para a Divisão 1.`, 'info');
+    }
+
+  } else {
+    // Os 2 primeiros da D2 sobem — sem exceção, incluindo o jogador
+    const promoted = sorted.slice(0, 2);
+
+    promoted.forEach(t=>{
+      const idx = clubs.d2.findIndex(([name])=>name===t.name);
+      if(idx===-1) return;
+      const entry = clubs.d2.splice(idx,1)[0];
+      clubs.d1.push(entry);
+    });
+
+    // Os 2 mais fracos de D1 que não estavam na tabela caem
+    const relegated = clubs.d1
+      .filter(([name])=>!inTable.has(name))
+      .sort((a,b)=>a[1]-b[1])
+      .slice(0, 2);
+
+    relegated.forEach(entry=>{
+      const idx = clubs.d1.findIndex(([name])=>name===entry[0]);
+      if(idx===-1) return;
+      clubs.d1.splice(idx,1);
+      clubs.d2.push(entry);
+    });
+
+    if(promoted.length){
+      const names = promoted.map(t=>t.name).join(' e ');
+      addNews(`📈 ${names} ${promoted.length>1?'sobem':'sobe'} para a Divisão 1.`, 'info');
+    }
+    if(relegated.length){
+      const names = relegated.map(([name])=>name).join(' e ');
+      addNews(`📉 ${names} ${relegated.length>1?'são rebaixados':'é rebaixado'} para a Divisão 2.`, 'info');
+    }
+  }
+}
+
 function finalizeSeason(){
   const table = S.season.table;
   const sorted = Object.values(table).sort((a,b)=> b.pts-a.pts || (b.gp-b.gc)-(a.gp-a.gc) || b.gp-a.gp);
   const rank = sorted.findIndex(t=>t.isMe)+1;
   S.club.prevLeagueRank = rank;
+  // Salva campeão e vice da liga para uso na Supercopa
+  S.season.leagueChampion = sorted[0] ? sorted[0].name : null;
+  S.season.leagueRunnerUp  = sorted[1] ? sorted[1].name : null;
+  S.season.leagueChampionStr = sorted[0] ? sorted[0].str : null;
+  S.season.leagueRunnerUpStr  = sorted[1] ? sorted[1].str : null;
   const leagueName = `${CLUB_COMPS[S.club.confed].league} ${S.club.division}`;
   if(rank===1) awardTrophy(leagueName);
   checkSeasonAwards();
+  const tableDiv = S.club.division; // divisão original antes de qualquer mudança do jogador
   if(S.club.division===2 && rank<=2){ S.club.division=1; addNews(`⬆️ ${S.club.name} conquista o acesso à Divisão 1!`, 'trophy'); }
   else if(S.club.division===1 && rank>=sorted.length-1){ S.club.division=2; addNews(`⬇️ ${S.club.name} é rebaixado(a) para a Divisão 2.`, 'event'); }
+
+  // Promove/rebaixa os outros times no CLUBS para dar vida ao mundo
+  simulateOtherTeamsPromoRelegation(sorted, S.club.country, tableDiv);
+
   const stat = S.statsBySeason[S.year] || {goals:0,assists:0,apps:0};
   addNews(`📋 Fim da temporada ${S.year}: ${stat.apps} jogos, ${stat.goals} gols, ${stat.assists} assistências — ${ordinal(rank)} lugar na ${leagueName}.`, 'info');
   evolvePlayer();
@@ -1398,15 +1486,44 @@ function checkRetirement(){
 }
 
 function buildSupercup(){
-  const wonLast = S.career.trophies.some(t=>t.year===S.year-1 && !t.isNational &&
-    (t.name.indexOf('Divisão')===0 || t.name===CLUB_COMPS[S.club.confed].cup));
-  if(!wonLast) return null;
-  const pool = continentalOpponentPool(S.club.confed, S.club.name)
-    .filter(c=>Math.abs(c.str - S.club.str) <= 12);
-  if(!pool.length) return null;
-  const opp = pick(pool);
-  addNews(`🏆 ${S.club.name} disputa a Supercopa ${S.year} contra ${opp.name}!`, 'info');
-  return { roundsNames:['Final'], round:0, teams:[{name:S.club.name,str:meTeamStrength(),isMe:true},{name:opp.name,str:opp.str,isMe:false}],
+  // A Supercopa é disputada entre o campeão da liga (pontos corridos) e o
+  // campeão da copa nacional da temporada anterior, ambos do mesmo país.
+  // Se for o mesmo clube, o vice-campeão da liga entra no lugar.
+
+  // Recuperar dados da temporada anterior salvos em S.lastSeason
+  const last = S.lastSeason;
+  if(!last) return null;
+
+  const leagueChamp    = last.leagueChampion;
+  const leagueChampStr = last.leagueChampionStr;
+  const leagueVice     = last.leagueRunnerUp;
+  const leagueViceStr  = last.leagueRunnerUpStr;
+  const cupChamp       = last.cupChampion;
+  const cupChampStr    = last.cupChampionStr;
+
+  // Precisa ter tido campeão definido nas duas competições
+  if(!leagueChamp || !cupChamp) return null;
+
+  let teamA, teamB;
+
+  if(leagueChamp === cupChamp){
+    // Mesmo campeão: liga vs. vice da liga
+    if(!leagueVice) return null;
+    teamA = {name: leagueChamp, str: leagueChampStr || 78, isMe: leagueChamp === S.club.name};
+    teamB = {name: leagueVice,  str: leagueViceStr  || 74, isMe: leagueVice  === S.club.name};
+  } else {
+    // Campeões distintos: liga vs. copa
+    teamA = {name: leagueChamp, str: leagueChampStr || 78, isMe: leagueChamp === S.club.name};
+    teamB = {name: cupChamp,    str: cupChampStr    || 74, isMe: cupChamp    === S.club.name};
+  }
+
+  // O jogador só participa se seu clube for um dos dois finalistas
+  const playerInvolved = teamA.isMe || teamB.isMe;
+  if(!playerInvolved) return null;
+
+  addNews(`🏆 ${teamA.name} x ${teamB.name} — Supercopa ${S.year}!`, 'info');
+  return { roundsNames:['Final'], round:0,
+    teams: [teamA, teamB],
     done:false, alive:true, champion:null, log:[] };
 }
 
@@ -1457,6 +1574,16 @@ function advanceClubWorldCup(){
 }
 
 function startNextSeason(){
+  // Snapshot dos dados necessários para a Supercopa da próxima temporada
+  const cup = S.season.cup;
+  S.lastSeason = {
+    leagueChampion:    S.season.leagueChampion    || null,
+    leagueChampionStr: S.season.leagueChampionStr || null,
+    leagueRunnerUp:    S.season.leagueRunnerUp    || null,
+    leagueRunnerUpStr: S.season.leagueRunnerUpStr || null,
+    cupChampion:    cup && cup.champion ? cup.champion.name : null,
+    cupChampionStr: cup && cup.champion ? (cup.champion.str || null) : null,
+  };
   S.player.age++;
   S.year++;
   initSeason(false);
