@@ -316,6 +316,21 @@ function crestTag(teamName, countryName) {
   return `<img src="assets/teams/${cleanCountry}/${cleanTeam}.png" alt="${teamName}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;" onerror="this.outerHTML='⚽'">`;
 }
 
+function playerPhotoTag(name){
+  if (!name) return "initText";
+    const cleanName = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+    const initText = initials(name);
+    
+    const imgId = "img-player-" + Math.random().toString(36).substr(2, 9);
+    
+    const testImg = new Image();
+    testImg.src = "assets/players/" + cleanName + ".png";
+    testImg.onerror = function() {
+      console.warn("Foto do jogador não encontrada na pasta assets/players/:", name + " (" + cleanName + ".png)");
+  };
+  return `<img src="assets/players/${cleanName}.png" alt="${name}" style="width:50%;height:50%;object-fit:contain;vertical-align:middle;" onerror="this.outerHTML='${initText}'">`;
+}
+
 function overallFromAttrs(attrs, posId){
   const pos = posById(posId);
   let base = 0;
@@ -569,7 +584,7 @@ function renderDraftCard(){
         </div>
         <span class="card-flag">${flag}</span>
       </div>
-      <div class="card-avatar">${initials(p.name)}</div>
+      <div class="card-avatar">${playerPhotoTag(p.name)}</div>
       <div class="card-name">${p.name}</div>
       <div class="card-meta">${p.country} · ${p.era}</div>
       <div class="card-stats">
@@ -690,7 +705,7 @@ function renderDraftSummary(){
         <div><div class="card-ovr">${S.player.overall}</div><div class="card-rarity-tag">POT ${S.player.potential}</div></div>
         <span class="card-flag">${flagEmoji(S.player.nationality)}</span>
       </div>
-      <div class="card-avatar">${initials(S.player.name)}</div>
+      <div class="card-avatar">${playerPhotoTag(S.player.name)}</div>
       <div class="card-name">${S.player.name}</div>
       <div class="card-meta">${pos.name} · 17 anos</div>
       <div class="card-stats">

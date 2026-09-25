@@ -339,6 +339,7 @@ input:focus,select:focus {
 }
 
 /* ---------- draft ---------- */
+/* ---------- draft ---------- */
 .draft-progress {
   display:flex;
   gap:6px;
@@ -380,14 +381,17 @@ input:focus,select:focus {
 
 .player-card {
   position:relative;
+  height: 100%;
   width:100%;
   aspect-ratio:3/4.1;
   border-radius:20px;
-  padding:18px;
+  padding:16px;
   color:#fff;
   overflow:hidden;
   animation:cardIn .5s cubic-bezier(.2,.8,.2,1);
   box-shadow:0 24px 50px -16px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.08);
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes cardIn {
@@ -473,40 +477,65 @@ input:focus,select:focus {
 }
 
 .card-avatar {
-  width:64px;
-  height:64px;
-  border-radius:50%;
-  background:rgba(255,255,255,.12);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-family:var(--display);
-  font-size:24px;
-  margin:6px auto 4px;
-  position:relative;
-  z-index:2;
-  border:2px solid rgba(255,255,255,.5);
+  width: 205px;
+  height: 200px;
+  background: rgba(0, 0, 0, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 14px auto 0 auto !important;
+  position: relative !important;
+  z-index: 5 !important;
+  border: 3px solid rgba(255, 255, 255, 0.7) !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4) !important;
+  flex-shrink: 0 !important;
+}
+
+/* Força a imagem a preencher o círculo completamente */
+.card-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Iniciais caso a imagem falhe */
+.card-initials {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  color: #ffffff !important;
+  font-family: var(--display) !important;
+  font-size: 36px !important;
 }
 
 .card-name {
   text-align:center;
   font-family:var(--display);
-  font-size:22px;
+  font-size:24px;
   letter-spacing:.03em;
   position:relative;
   z-index:2;
   line-height:1;
+  margin-top:15px; /* Joga o nome para baixo, próximo aos atributos */
   margin-bottom:2px;
+  text-shadow:0 2px 4px rgba(0,0,0,0.5);
 }
 
 .card-meta {
   text-align:center;
   font-family:var(--mono);
-  font-size:10.5px;
-  opacity:.8;
+  font-size:11px;
+  opacity:.85;
   position:relative;
   z-index:2;
-  margin-bottom:10px;
+  margin-bottom:10px; 
 }
 
 .card-stats {
@@ -514,20 +543,25 @@ input:focus,select:focus {
   z-index:2;
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:5px 12px;
+  gap:4px 12px;
   font-family:var(--mono);
   font-size:12px;
+  background:rgba(0,0,0,0.22);
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.1);
+  margin-top:0;
 }
-
 .card-stats .st {
   display:flex;
   justify-content:space-between;
-  border-bottom:1px dashed rgba(255,255,255,.18);
+  border-bottom:1px dashed rgba(255,255,255,.15);
   padding-bottom:2px;
 }
 
 .card-stats .st b {
   font-size:13px;
+  color:var(--gold-light);
 }
 
 .attr-choices {
@@ -609,14 +643,28 @@ input:focus,select:focus {
 /* ---------- career screen ---------- */
 .career-grid {
   display:grid;
-  grid-template-columns:300px 1fr;
-  gap:18px;
+  grid-template-columns:280px 1fr 300px;
+  gap:20px;
+  align-items: start;
 }
 
-@media (max-width:900px) {
+#screen-career {
+  display: flex;
+}
+
+@media (max-width:1300px) {
   .career-grid {
     grid-template-columns:1fr;
   }
+}
+
+#draftSummaryCardWrap {
+  height: 464px;
+  width: 340px;
+}
+
+#myDraft {
+  margin-left: 60px;
 }
 
 .player-mini {
