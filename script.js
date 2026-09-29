@@ -2259,6 +2259,7 @@ function renderPlayerMini(){
         <div><div class="mini-ovr">${S.player.overall}</div><div class="mini-pos">${pos.icon} ${pos.name}</div></div>
         <span class="card-flag">${flagEmoji(S.player.nationality)}</span>
       </div>
+      <div class="card-avatar"><img src="assets/players/player.png" alt="Player"></div>
       <div class="mini-name">${S.player.name}</div>
       <div class="mini-club">${crestTag(S.club.name, S.club.country)} ${S.club.name} · Divisão ${S.club.division}</div>
     </div>
