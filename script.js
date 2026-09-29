@@ -681,14 +681,14 @@ function renderDraftSummary(){
     <p class="screen-sub">${S.player.name} — ${pos.icon} ${pos.name} · ${S.player.nationality}</p>
     <div class="career-grid" style="grid-template-columns:280px 1fr;">
       <div id="draftSummaryCardWrap"></div>
-      <div>
-        <p class="section-label">Origem de cada atributo</p>
-        <div class="draft-taken-list">${D.log.map(l=>`<span class="taken-tag">${ATTR_ICON[l.attr]} ${ATTR_LABEL[l.attr]}: <b>${ATTR_STAR[l.attr]?starStr(l.value):l.value}</b> — ${l.source}</span>`).join('')}</div>
-        <div class="divider"></div>
-        <p class="draft-side-note">Overall calculado com base nos pesos da posição <b>${pos.name}</b>. Potencial define o teto de evolução do seu jogador ao longo da carreira.</p>
-        <div class="btn-row">
+      <div id="myDraft">
+         <p class="section-label">Origem de cada atributo</p>
+         <div class="draft-taken-list">${D.log.map(l=>`<span class="taken-tag">${ATTR_ICON[l.attr]} ${ATTR_LABEL[l.attr]}: <b>${ATTR_STAR[l.attr]?starStr(l.value):l.value}</b> — ${l.source}</span>`).join('')}</div>
+         <div class="divider"></div>
+         <p class="draft-side-note">Overall calculado com base nos pesos da posição <b>${pos.name}</b>. Potencial define o teto de evolução do seu jogador ao longo da carreira.</p>
+         <div class="btn-row">
           <button class="btn btn-primary btn-block" id="btnStartCareer">Começar Carreira →</button>
-        </div>
+         </div>
       </div>
     </div>
   `;
