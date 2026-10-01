@@ -705,7 +705,7 @@ function renderDraftSummary(){
         <div><div class="card-ovr">${S.player.overall}</div><div class="card-rarity-tag">POT ${S.player.potential}</div></div>
         <span class="card-flag">${flagEmoji(S.player.nationality)}</span>
       </div>
-      <div class="card-avatar">${playerPhotoTag(S.player.name)}</div>
+      <div class="card-avatar"><img src="assets/players/player.png" alt="Player"></div>
       <div class="card-name">${S.player.name}</div>
       <div class="card-meta">${pos.name} · 17 anos</div>
       <div class="card-stats">
